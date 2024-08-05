@@ -1,1 +1,1 @@
-# jira-reporter
+# jira-weasel
