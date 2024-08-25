@@ -21,28 +21,36 @@ type ID struct {
 	ID string `json:"id"`
 }
 
+type Name struct {
+	Name string `json:"name"`
+}
+
+type Key struct {
+	Key string `json:"key"`
+}
+
 type ContentItem struct {
-	Text string `json:"text"`
 	Type string `json:"type"`
+	Text string `json:"text"`
 }
 
 type DescriptionParagraph struct {
-	Content []ContentItem `json:"content"`
 	Type    string        `json:"type"`
+	Content []ContentItem `json:"content"`
 }
 
 type IssueDescription struct {
-	Content []DescriptionParagraph `json:"content"`
 	Type    string                 `json:"type"`
 	Version uint8                  `json:"version"`
+	Content []DescriptionParagraph `json:"content"`
 }
 
 type Issue struct {
-	IssueTypeID ID               `json:"issueType"`
-	Priority    ID               `json:"priority"`
-	Project     ID               `json:"project"`
-	Summary     string           `json:"summary"`
-	Description IssueDescription `json:"description"`
+	Description   IssueDescription `json:"description"`
+	Priority      ID               `json:"priority"`
+	IssueTypeName Name             `json:"issueType"`
+	Project       Key              `json:"project"`
+	Summary       string           `json:"summary"`
 }
 
 func NewIssue() *Issue {
