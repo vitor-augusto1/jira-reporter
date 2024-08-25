@@ -41,7 +41,10 @@ func (jc *JiraClient) GetAllProjects() ([]byte, error) {
 func (jc *JiraClient) CreateNewIssue(issue *Issue) error {
 	var CREATE_ISSUE_URL string = jc.baseURL + NEW_ISSUE_PATH
 	client := &http.Client{}
-	body, _ := json.Marshal(issue)
+  structPayload := IssuePayload{
+    Fields: issue,
+  }
+	body, _ := json.Marshal(structPayload)
 	payload := bytes.NewBuffer(body)
 	req, err := http.NewRequest(http.MethodPost, CREATE_ISSUE_URL, payload)
 	if err != nil {
@@ -49,6 +52,7 @@ func (jc *JiraClient) CreateNewIssue(issue *Issue) error {
 		return err
 	}
 	req.Header.Add("Authorization", "Basic "+jc.creds.ReturnEncodedCredentials())
+  req.Header.Add("Content-Type", "application/json")
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Println("Error. Cannot send request: ", err)
@@ -60,7 +64,6 @@ func (jc *JiraClient) CreateNewIssue(issue *Issue) error {
 		fmt.Println("Error reading response body: ", err)
 		return err
 	}
-	fmt.Println(string(body))
 	return nil
 }
 

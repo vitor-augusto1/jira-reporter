@@ -7,14 +7,14 @@ const (
 	BUG  DefaultIssueTypesID = 10002
 )
 
-type PrioritiesID uint16
+type PrioritiesID string
 
 const (
-	HIGHEST PrioritiesID = iota + 1
-	HIGH
-	MEDIUM
-	LOW
-	LOWEST
+	HIGHEST PrioritiesID = "1"
+	HIGH    PrioritiesID = "2"
+	MEDIUM  PrioritiesID = "3"
+	LOW     PrioritiesID = "4"
+	LOWEST  PrioritiesID = "5"
 )
 
 type ID struct {
@@ -48,9 +48,13 @@ type IssueDescription struct {
 type Issue struct {
 	Description   IssueDescription `json:"description"`
 	Priority      ID               `json:"priority"`
-	IssueTypeName Name             `json:"issueType"`
+	IssueTypeName Name             `json:"issuetype"`
 	Project       Key              `json:"project"`
 	Summary       string           `json:"summary"`
+}
+
+type IssuePayload struct {
+	Fields *Issue `json:"fields"`
 }
 
 func NewIssue() *Issue {
