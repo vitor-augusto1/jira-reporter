@@ -9,11 +9,11 @@ type JiraBasicAuthCreds struct {
 
 // Returns jira encoded credentials
 func (b *JiraBasicAuthCreds) ReturnEncodedCredentials() string {
-  authStr := b.username + ":" + b.password
-  return base64.StdEncoding.EncodeToString([]byte(authStr))
+	authStr := b.username + ":" + b.password
+	return base64.StdEncoding.EncodeToString([]byte(authStr))
 }
 
 // Returns new instance of NewJiraBasicAuthCreds
 func NewJiraBasicAuthCreds() *JiraBasicAuthCreds {
-  return &JiraBasicAuthCreds{}
+	return &JiraBasicAuthCreds{}
 }
