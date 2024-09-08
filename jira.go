@@ -35,17 +35,15 @@ func (jc *JiraClient) CreateNewIssueFromTODO(td Todo) *Issue {
 			},
 		},
 	}
-	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Println("Error reading response body: ", err)
-		return nil, err
-	}
-	return body, nil
+	newIssue.Priority = ID{ID: string(td.Priority)}
+	newIssue.IssueTypeName = Name{Name: "Bug"}
+	newIssue.Project = Key{Key: "SCRUM"}
+	newIssue.Summary = td.Title 
+  return newIssue
 }
 
 // Creates a new jira issue
-func (jc *JiraClient) CreateNewIssue(issue *Issue) error {
+func (jc *JiraClient) ReportIssueAsJiraTicket(issue *Issue) error {
 	var CREATE_ISSUE_URL string = jc.baseURL + NEW_ISSUE_PATH
 	client := &http.Client{}
 	structPayload := IssuePayload{
@@ -72,12 +70,4 @@ func (jc *JiraClient) CreateNewIssue(issue *Issue) error {
 		return err
 	}
 	return nil
-}
-
-// Returns new instance of JiraClient
-func NewJiraClient(creds *JiraBasicAuthCreds, bURL string) *JiraClient {
-	return &JiraClient{
-		creds:   creds,
-		baseURL: bURL,
-	}
 }
