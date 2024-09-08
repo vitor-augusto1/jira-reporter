@@ -18,15 +18,22 @@ type JiraClient struct {
 	baseURL string
 }
 
-// Returns the jira api response with the projects
-func (jc *JiraClient) GetAllProjects() ([]byte, error) {
-	var ALL_PROJECTS_URL string = jc.baseURL + ALL_PROJECTS_PATH
-	client := &http.Client{}
-	req, _ := http.NewRequest(http.MethodGet, ALL_PROJECTS_URL, nil)
-	req.Header.Add("Authorization", "Basic "+jc.creds.ReturnEncodedCredentials())
-	resp, err := client.Do(req)
-	if err != nil {
-		return nil, err
+func (jc *JiraClient) CreateNewIssueFromTODO(td Todo) *Issue {
+	newIssue := NewIssue()
+	newIssue.Description = IssueDescription{
+		Type:    "doc",
+		Version: 1,
+		Content: []DescriptionParagraph{
+			{
+				Type: "paragraph",
+				Content: []ContentItem{
+					{
+						Type: "text",
+						Text: td.StringBody(),
+					},
+				},
+			},
+		},
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
