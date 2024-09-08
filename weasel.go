@@ -70,3 +70,7 @@ func (wl *Weasel) returnTodoFromLine(
 	}
 	return nil
 }
+
+func (wl Weasel) todoRegex(keyword string) string {
+	return "^(.*)" + "(" + regexp.QuoteMeta(keyword) + ")" + " P([1-5])" + ": (.*)$"
+}
