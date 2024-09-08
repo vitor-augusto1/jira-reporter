@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 )
 
@@ -13,25 +14,27 @@ func main() {
 	creds.username = os.Getenv("PROJECT_USERNAME")
 	creds.password = os.Getenv("PROJECT_PASSWORD")
 	jc := NewJiraClient(creds, PROJECT_BASE_URL)
-	newIssue := NewIssue()
-	newIssue.Description = IssueDescription{
-		Type:    "doc",
-		Version: 1,
-		Content: []DescriptionParagraph{
-			{
-				Type: "paragraph",
-				Content: []ContentItem{
-					{
-						Type: "text",
-						Text: "JIRA-WEASEL body test",
-					},
-				},
-			},
-		},
+  wsl := Weasel{
+    Keywords: []string{"TODO","FIXME","REFACTOR"},
+  }
+  fmt.Println(wsl.todoRegex("TODO"))
+  wsl.searchTodos("./test.txt", func(todo Todo) error {
+    issue := jc.CreateNewIssueFromTODO(todo)
+    if issue != nil {
+      fmt.Printf("Issue to be reported: '%s' \n", issue.Summary)
+      err := jc.ReportIssueAsJiraTicket(issue)
+      if err != nil {
+        fmt.Printf("Cant report this following issue: '%s'. Skipping for now.\n", issue.Summary)
+      }
+    }
+    return nil
+  })
+}
+
+// Returns new instance of JiraClient
+func NewJiraClient(creds *JiraBasicAuthCreds, bURL string) *JiraClient {
+	return &JiraClient{
+		creds:   creds,
+		baseURL: bURL,
 	}
-	newIssue.Priority = ID{ID: string(HIGHEST)}
-	newIssue.IssueTypeName = Name{Name: "Bug"}
-	newIssue.Project = Key{Key: "SCRUM"}
-	newIssue.Summary = "JIRA-WEASEL TESTE 2"
-	_ = jc.CreateNewIssue(newIssue)
 }
