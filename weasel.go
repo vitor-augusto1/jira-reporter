@@ -45,3 +45,28 @@ func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 	return nil
 }
 
+func (wl *Weasel) returnTodoFromLine(
+	lineContent string,
+	lineNumber uint32,
+	filePath string,
+) *Todo {
+	for _, keyword := range wl.Keywords {
+		todo := regexp.MustCompile(wl.todoRegex(keyword))
+		groups := todo.FindStringSubmatch(lineContent)
+		if groups != nil {
+			prefix := groups[1]
+			keyword := groups[2]
+			priority := groups[3]
+			title := groups[4]
+			return &Todo{
+				Prefix:   prefix,
+				Keyword:  keyword,
+				Priority: PrioritiesID(priority),
+				Title:    title,
+				FilePath: filePath,
+				Line:     lineNumber,
+			}
+		}
+	}
+	return nil
+}
