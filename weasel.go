@@ -29,17 +29,13 @@ func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 			todo = wl.returnTodoFromLine(line, lineNumber, filePath)
 			continue
 		}
-		// Now, if the todo exists its time to check for it's body,
-    // grabing every following line that has the todo prefix.
-		// We can assume that every line that has the prefix (e.g '//') is part
-		// of the todo. But it needs to come below the todo's line.
 		lineIsPartOfTheTodoBody := todo.LineHasTodoPrefix(line)
 		if lineIsPartOfTheTodoBody != nil {
 			todo.Body = append(todo.Body, *lineIsPartOfTheTodoBody)
 		} else {
 			wl.Todos = append(wl.Todos, *todo)
       ttr(*todo)
-			todo = nil // Done checking the body. Back searching for new todos
+			todo = nil
 		}
 	}
 	return nil
