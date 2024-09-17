@@ -22,6 +22,7 @@ type IssueTypeKeywords map[string]struct {
 type JiraProjectYamlConfig struct {
 	Jira     JiraProjectConfig `yaml:"jira"`
 	Dirs     string            `yaml:"dirs"`
+	RepoURL  string            `yaml:"repoUrl"`
 	Keywords IssueTypeKeywords `yaml:"keywords"`
 }
 

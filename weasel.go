@@ -2,13 +2,17 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"os"
+	"os/exec"
 	"regexp"
+	"strings"
 )
 
 type Weasel struct {
-	Keywords []string
-	Todos    []Todo
+	Keywords      []string
+	Todos         []Todo
+	baseRemoteUrl string
 }
 
 // Walk a file searching for todos or comments with specific keywords
@@ -33,8 +37,9 @@ func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 		if lineIsPartOfTheTodoBody != nil {
 			todo.Body = append(todo.Body, *lineIsPartOfTheTodoBody)
 		} else {
+      wl.StoreTodoFullRemoteAddrs(todo)
 			wl.Todos = append(wl.Todos, *todo)
-      ttr(*todo)
+			ttr(*todo)
 			todo = nil
 		}
 	}
@@ -69,4 +74,24 @@ func (wl *Weasel) returnTodoFromLine(
 
 func (wl Weasel) todoRegex(keyword string) string {
 	return "^(.*)" + "(" + regexp.QuoteMeta(keyword) + ")" + " P([1-5])" + ": (.*)$"
+}
+
+func (wl Weasel) GetProjectCurrentBranch() string {
+	cmd := exec.Command("git", "branch", "--show-current")
+	stdout, err := cmd.Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting the current git branch.\n%s\n", err)
+		return ""
+	}
+	cb := strings.TrimSpace(string(stdout))
+	return cb
+}
+
+func (wl Weasel) StoreTodoFullRemoteAddrs(todo *Todo) {
+	rtAddr := fmt.Sprintf(
+		"%s/blob/%s/%s/#L%d",
+		wl.baseRemoteUrl, wl.GetProjectCurrentBranch(), todo.FilePath, todo.Line,
+	)
+  todo.RemoteAddr = rtAddr
+  todo.Body = append(todo.Body, todo.RemoteAddr)
 }
