@@ -3,16 +3,15 @@ package main
 import "strings"
 
 type Todo struct {
-	Prefix     string
-	Keyword    string
-	Priority   PrioritiesID
-	Title      string
-	Body       []string
-	FilePath   string
-	Line       uint32
-  RemoteAddr string
-	// TODO: Add a context field to this struct to hold the context around the todo
-	// Maybe taking every contiguous text below the todo and set it as a context.
+	Prefix      string
+	Keyword     string
+	Priority    PrioritiesID
+	Title       string
+	Body        []string
+	FilePath    string
+	Line        uint32
+	RemoteAddr  string
+	ReportedID  string
 }
 
 type TodoTransformer func(Todo) error

@@ -23,7 +23,7 @@ func main() {
 	wsl.searchTodos("test.txt", func(todo Todo) error {
 		issue := jc.CreateNewIssueFromTODO(todo)
 		if issue != nil {
-			err := jc.ReportIssueAsJiraTicket(issue)
+			createdIssueResp, err := jc.ReportIssueAsJiraTicket(issue)
 			if err != nil {
 				fmt.Fprintf(
           os.Stderr,
@@ -31,6 +31,7 @@ func main() {
           issue.Summary,
         )
 			}
+      todo.ReportedID = createdIssueResp.Id
 		}
 		return nil
 	})
