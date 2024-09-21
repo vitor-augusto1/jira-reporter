@@ -10,7 +10,6 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing the yaml config file.\n%s\n", err)
 	}
-	fmt.Fprintf(os.Stdout, "%s\n", parsedJiraConfig)
 	creds := NewJiraBasicAuthCreds()
 	creds.username = os.Getenv("PROJECT_USERNAME")
 	creds.password = os.Getenv("PROJECT_PASSWORD")
@@ -24,10 +23,13 @@ func main() {
 	wsl.searchTodos("test.txt", func(todo Todo) error {
 		issue := jc.CreateNewIssueFromTODO(todo)
 		if issue != nil {
-			fmt.Fprintf(os.Stdout, "Issue to be reported: '%s'\n", issue.Summary)
 			err := jc.ReportIssueAsJiraTicket(issue)
 			if err != nil {
-				fmt.Fprintf(os.Stderr, "Cant report this following issue: '%s'. Skipping for now.\n", issue.Summary)
+				fmt.Fprintf(
+          os.Stderr,
+          "Cant report this following issue: '%s'. Skipping for now.\n",
+          issue.Summary,
+        )
 			}
 		}
 		return nil
