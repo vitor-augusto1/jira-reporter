@@ -9,7 +9,7 @@ type Todo struct {
 	Title       string
 	Body        []string
 	FilePath    string
-	Line        uint32
+	Line        uint64
 	RemoteAddr  string
 	ReportedID  string
 }
@@ -26,4 +26,9 @@ func (td *Todo) LineHasTodoPrefix(line string) *string {
 
 func (td *Todo) StringBody() string {
 	return strings.Join(td.Body, "\n")
+}
+
+func (td *Todo) ChangeTodoStatus() {
+  // TODO: Change the todo inside the file with the id of the reported todo
+  // to identify that the todo was reported
 }

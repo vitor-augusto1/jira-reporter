@@ -51,6 +51,7 @@ type Issue struct {
 	IssueTypeName Name             `json:"issuetype"`
 	Project       Key              `json:"project"`
 	Summary       string           `json:"summary"`
+  Todo          Todo
 }
 
 type IssuePayload struct {

@@ -48,6 +48,7 @@ func (jc *JiraClient) CreateNewIssueFromTODO(td Todo) *Issue {
 	newIssue.IssueTypeName = Name{Name: "Bug"}
 	newIssue.Project = Key{Key: "SCRUM"}
 	newIssue.Summary = td.Title
+  newIssue.Todo = td
 	return newIssue
 }
 

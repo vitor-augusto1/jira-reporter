@@ -20,21 +20,26 @@ func main() {
 	}
 	fmt.Fprintf(os.Stdout, "TODO regex: %s\n", wsl.todoRegex("TODO"))
 	// TODO: Implement depth searchs reports. Visit every file in the "dirs" param
+	issuesToReport := []*Issue{}
 	wsl.searchTodos("test.txt", func(todo Todo) error {
 		issue := jc.CreateNewIssueFromTODO(todo)
 		if issue != nil {
-			createdIssueResp, err := jc.ReportIssueAsJiraTicket(issue)
-			if err != nil {
-				fmt.Fprintf(
-          os.Stderr,
-          "Cant report this following issue: '%s'. Skipping for now.\n",
-          issue.Summary,
-        )
-			}
-      todo.ReportedID = createdIssueResp.Id
+			// TODO: Store the created issue to issuesToReport slice and
+			issuesToReport = append(issuesToReport, issue)
 		}
 		return nil
 	})
+	for _, issue := range issuesToReport {
+		createdIssueResp, err := jc.ReportIssueAsJiraTicket(issue)
+		if err != nil {
+			fmt.Fprintf(
+				os.Stderr,
+				"Cant report the following issue: '%s'. Skipping for now.\n",
+				issue.Summary,
+			)
+		}
+    issue.Todo.ReportedID = createdIssueResp.Id
+	}
 }
 
 // Returns new instance of JiraClient
