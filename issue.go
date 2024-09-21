@@ -51,7 +51,7 @@ type Issue struct {
 	IssueTypeName Name             `json:"issuetype"`
 	Project       Key              `json:"project"`
 	Summary       string           `json:"summary"`
-  Todo          Todo
+	Todo          Todo             `json:"-"`
 }
 
 type IssuePayload struct {

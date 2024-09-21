@@ -24,7 +24,7 @@ func main() {
 	wsl.searchTodos("test.txt", func(todo Todo) error {
 		issue := jc.CreateNewIssueFromTODO(todo)
 		if issue != nil {
-			// TODO: Store the created issue to issuesToReport slice and
+			// TODO: Store the created issue to issuesToReport slice and report after
 			issuesToReport = append(issuesToReport, issue)
 		}
 		return nil

@@ -47,7 +47,7 @@ func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 			err = ttr(*todo)
 			// If the TodoTransformer executes successfully we change the todo
 			// line to indicate that it has been reported
-			if err == nil {}
+      if err == nil {}
 			todo = nil
 		}
 	}
