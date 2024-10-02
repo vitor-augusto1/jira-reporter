@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 )
 
@@ -29,6 +31,26 @@ func (td *Todo) LineHasTodoPrefix(line string) *string {
 	return nil
 }
 
+func (td *Todo) CommitReportedTodo() error {
+  if td.ReportedID != nil {
+    addCmd := exec.Command("git", "add", td.FilePath)
+    err := addCmd.Run()
+    if err != nil {
+      fmt.Fprintf(os.Stderr, "Can't add changes: '%s'.\n", err)
+      return err
+    }
+    commitMessage := fmt.Sprintf("weasel: Report TODO (%s)", *td.ReportedID)
+    commitCmd := exec.Command("git", "commit", "-m", commitMessage)
+    err = commitCmd.Run()
+    if err != nil {
+      fmt.Fprintf(os.Stderr, "Can't commit changes: '%s'.\n", err)
+      return err
+    }
+    return nil
+  }
+  return errors.New("Commiting unreported todo")
+}
+
 func (td *Todo) UpdatedTodoString(defaultStr string) string {
   if td.ReportedID != nil {
     updatedTodo := fmt.Sprintf(
@@ -49,7 +71,7 @@ func (td *Todo) StringBody() string {
 	return strings.Join(td.Body, "\n")
 }
 
-func (td *Todo) ChangeTodoStatus() {
+func (td *Todo) ChangeTodoStatus() error {
   fmt.Println("Changing the todo status...")
   tmpFileName := "tmp-wasel.weasel"
   tmpFile, err := os.Create(tmpFileName)
@@ -59,7 +81,7 @@ func (td *Todo) ChangeTodoStatus() {
 				"Can't create the tmp file: '%s'. Skipping for now.\n",
         err,
 			)
-      return
+      return err
   }
   defer tmpFile.Close()
   todoFile, err := os.Open(td.FilePath)
@@ -69,7 +91,7 @@ func (td *Todo) ChangeTodoStatus() {
       "Can't open the Todo file: '%s'. Skipping for now.\n",
       err,
     )
-    return
+    return err
   }
   defer todoFile.Close()
   todoFileInfo, _ := os.Stat(td.FilePath)
@@ -91,7 +113,7 @@ func (td *Todo) ChangeTodoStatus() {
       "Can't set permissions: '%s'. Skipping for now.\n",
       err,
     )
-    return
+    return err
   }
   err = os.Rename(tmpFileName, td.FilePath)
   if err != nil {
@@ -100,6 +122,7 @@ func (td *Todo) ChangeTodoStatus() {
       "Can't rename the file: '%s'. Skipping for now.\n",
       err,
     )
-    return
+    return err
   }
+  return nil
 }

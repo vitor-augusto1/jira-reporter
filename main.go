@@ -39,7 +39,14 @@ func main() {
 			)
 		}
     issue.Todo.ReportedID = &createdIssueResp.Key
-    issue.Todo.ChangeTodoStatus()
+    err = issue.Todo.ChangeTodoStatus()
+    if err != nil {
+      continue
+    }
+    err = issue.Todo.CommitReportedTodo()
+    if err != nil {
+      continue
+    }
 	}
 }
 
