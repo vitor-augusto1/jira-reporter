@@ -38,7 +38,8 @@ func main() {
 				issue.Summary,
 			)
 		}
-    issue.Todo.ReportedID = createdIssueResp.Id
+    issue.Todo.ReportedID = &createdIssueResp.Key
+    issue.Todo.ChangeTodoStatus()
 	}
 }
 
