@@ -26,6 +26,16 @@ type JiraProjectYamlConfig struct {
 	Keywords IssueTypeKeywords `yaml:"keywords"`
 }
 
+func (jpy *JiraProjectYamlConfig) ReturnKeywordSlice() []string {
+  keywordSlice := make([]string, len(jpy.Keywords))
+  i := 0
+  for key := range jpy.Keywords {
+    keywordSlice[i] = key
+    i++
+  }
+  return keywordSlice
+}
+
 func parseYamlConfigFile(filePath string) (*JiraProjectYamlConfig, error) {
 	var jpy JiraProjectYamlConfig
 	yamlFile, err := os.ReadFile(filePath)
