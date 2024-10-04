@@ -71,6 +71,7 @@ func (td *Todo) StringBody() string {
 	return strings.Join(td.Body, "\n")
 }
 
+// Changes the Todo status in its line
 func (td *Todo) ChangeTodoStatus() error {
   fmt.Println("Changing the todo status...")
   tmpFileName := "tmp-wasel.weasel"

@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+var DEFAULT_KEYWORDS = []string{"TODO", "FIXME", "REFACTOR"}
+
 func main() {
 	parsedJiraConfig, err := parseYamlConfigFile("./test.yaml")
 	if err != nil {
@@ -13,9 +15,13 @@ func main() {
 	creds := NewJiraBasicAuthCreds()
 	creds.username = os.Getenv("PROJECT_USERNAME")
 	creds.password = os.Getenv("PROJECT_PASSWORD")
+  keywordSlice := parsedJiraConfig.ReturnKeywordSlice()
+  if len(keywordSlice) == 0 {
+    keywordSlice = DEFAULT_KEYWORDS
+  }
 	jc := NewJiraClient(creds, parsedJiraConfig.Jira.Project.BaseUrl)
 	wsl := Weasel{
-		Keywords:      []string{"TODO", "FIXME", "REFACTOR"},
+		Keywords:      keywordSlice,
 		baseRemoteUrl: parsedJiraConfig.RepoURL,
 	}
 	fmt.Fprintf(os.Stdout, "TODO regex: %s\n", wsl.todoRegex("TODO"))
