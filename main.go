@@ -27,14 +27,22 @@ func main() {
 	fmt.Fprintf(os.Stdout, "TODO regex: %s\n", wsl.todoRegex("TODO"))
 	// TODO: Implement depth searchs reports. Visit every file in the "dirs" param
 	issuesToReport := []*Issue{}
-	wsl.searchTodos("test.txt", func(todo Todo) error {
-		issue := jc.CreateNewIssueFromTODO(todo)
-		if issue != nil {
-			// TODO: Store the created issue to issuesToReport slice and report after
-			issuesToReport = append(issuesToReport, issue)
-		}
-		return nil
-	})
+  wsl.LoadProjectFiles()
+  wsl.VisitAndReportWeaselFiles(func (todo Todo) error {
+    issue := jc.CreateNewIssueFromTODO(todo)
+    if issue != nil {
+      issuesToReport = append(issuesToReport, issue)
+    }
+    return nil
+  })
+	// wsl.searchTodos("test.txt", func(todo Todo) error {
+	// 	issue := jc.CreateNewIssueFromTODO(todo)
+	// 	if issue != nil {
+	// 		// TODO: Store the created issue to issuesToReport slice and report after
+	// 		issuesToReport = append(issuesToReport, issue)
+	// 	}
+	// 	return nil
+	// })
 	for _, issue := range issuesToReport {
 		createdIssueResp, err := jc.ReportIssueAsJiraTicket(issue)
 		if err != nil {

@@ -11,6 +11,7 @@ import (
 )
 
 type Weasel struct {
+	Files         []string
 	Keywords      []string
 	Todos         []Todo
 	baseRemoteUrl string
@@ -44,32 +45,41 @@ func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 		} else {
 			wl.StoreTodoFullRemoteAddrs(todo)
 			wl.Todos = append(wl.Todos, *todo)
-			err = ttr(*todo)
-			// If the TodoTransformer executes successfully we change the todo
-			// line to indicate that it has been reported
-      if err == nil {}
+			ttr(*todo)
 			todo = nil
 		}
+	}
+	if todo != nil {
+		wl.StoreTodoFullRemoteAddrs(todo)
+		wl.Todos = append(wl.Todos, *todo)
+		ttr(*todo)
+	}
+	return nil
+}
+
+func (wl *Weasel) VisitAndReportWeaselFiles(ttr TodoTransformer) error {
+	for _, file := range wl.Files {
+		wl.searchTodos(file, ttr)
 	}
 	return nil
 }
 
 // Back tracks to a specific line based on the offset
 func (wl *Weasel) BackTrackLine(
-  file *os.File,
-  offset int64,
-  handler func(string) string,
+	file *os.File,
+	offset int64,
+	handler func(string) string,
 ) error {
 	_, err := file.Seek(offset, io.SeekStart)
 	if err != nil {
 		return fmt.Errorf(
-      "Could not back track to the line. Byte offset %d: %v", offset, err,
-    )
+			"Could not back track to the line. Byte offset %d: %v", offset, err,
+		)
 	}
 	scanner := bufio.NewScanner(file)
 	if scanner.Scan() {
-    fmt.Println("BACKTRACTED LINE CONTENT ::: ", scanner.Text())
-    handler(scanner.Text())
+		fmt.Println("BACKTRACTED LINE CONTENT ::: ", scanner.Text())
+		handler(scanner.Text())
 		return nil
 	}
 	return nil
@@ -114,6 +124,18 @@ func (wl Weasel) GetProjectCurrentBranch() string {
 	}
 	cb := strings.TrimSpace(string(stdout))
 	return cb
+}
+
+// Load the tracked project's files
+func (wl *Weasel) LoadProjectFiles() {
+	cmd := exec.Command("git", "ls-files", "--full-name")
+	stdout, err := cmd.Output()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting the project's files.\n%s\n", err)
+		os.Exit(1)
+	}
+	output := strings.TrimSpace(string(stdout))
+	wl.Files = strings.Split(output, "\n")
 }
 
 func (wl Weasel) StoreTodoFullRemoteAddrs(todo *Todo) {
