@@ -27,7 +27,7 @@ type JiraClient struct {
 	baseURL string
 }
 
-func (jc *JiraClient) CreateNewIssueFromTODO(td Todo) *Issue {
+func (jc *JiraClient) CreateNewIssueFromTODO(td Todo, issueTp IssueType) *Issue {
 	newIssue := NewIssue()
 	newIssue.Description = IssueDescription{
 		Type:    "doc",
@@ -45,7 +45,7 @@ func (jc *JiraClient) CreateNewIssueFromTODO(td Todo) *Issue {
 		},
 	}
 	newIssue.Priority = ID{ID: string(td.Priority)}
-	newIssue.IssueTypeName = Name{Name: "Bug"}
+	newIssue.IssueTypeName = Name{Name: issueTp}
 	newIssue.Project = Key{Key: "SCRUM"}
 	newIssue.Summary = td.Title
   newIssue.Todo = td

@@ -58,6 +58,16 @@ type IssuePayload struct {
 	Fields *Issue `json:"fields"`
 }
 
+type IssueType = string
+
 func NewIssue() *Issue {
 	return &Issue{}
+}
+
+func sliceContainsValidIssuesType(sl []string, validOnes map[string]bool, errorCallback func(invalidType string)) {
+  for _, item := range sl {
+    if !validOnes[item] {
+      errorCallback(item)
+    }
+  }
 }

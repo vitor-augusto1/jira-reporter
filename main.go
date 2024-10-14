@@ -12,6 +12,18 @@ func main() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing the yaml config file.\n%s\n", err)
 	}
+  sliceContainsValidIssuesType(
+    parsedJiraConfig.ReturnIssuesTypesSlice(),
+    map[string]bool{"Bug": true, "Task": true},
+    func(invalidType string) {
+      fmt.Fprintf(
+        os.Stderr,
+        "An invalid issue type was provided in your yaml config file: '%s'\n",
+        invalidType,
+      )
+      os.Exit(1)
+    },
+  )
 	creds := NewJiraBasicAuthCreds()
 	creds.username = os.Getenv("PROJECT_USERNAME")
 	creds.password = os.Getenv("PROJECT_PASSWORD")
@@ -29,20 +41,12 @@ func main() {
 	issuesToReport := []*Issue{}
   wsl.LoadProjectFiles()
   wsl.VisitAndReportWeaselFiles(func (todo Todo) error {
-    issue := jc.CreateNewIssueFromTODO(todo)
+    issue := jc.CreateNewIssueFromTODO(todo, parsedJiraConfig.Keywords[todo.Keyword].IssueType)
     if issue != nil {
       issuesToReport = append(issuesToReport, issue)
     }
     return nil
   })
-	// wsl.searchTodos("test.txt", func(todo Todo) error {
-	// 	issue := jc.CreateNewIssueFromTODO(todo)
-	// 	if issue != nil {
-	// 		// TODO: Store the created issue to issuesToReport slice and report after
-	// 		issuesToReport = append(issuesToReport, issue)
-	// 	}
-	// 	return nil
-	// })
 	for _, issue := range issuesToReport {
 		createdIssueResp, err := jc.ReportIssueAsJiraTicket(issue)
 		if err != nil {
