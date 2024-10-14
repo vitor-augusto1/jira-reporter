@@ -16,7 +16,7 @@ type JiraProjectConfig struct {
 }
 
 type IssueTypeKeywords map[string]struct {
-	IssueType string `yaml:"issueType"`
+	IssueType IssueType `yaml:"issueType"`
 }
 
 type JiraProjectYamlConfig struct {
@@ -34,6 +34,16 @@ func (jpy *JiraProjectYamlConfig) ReturnKeywordSlice() []string {
     i++
   }
   return keywordSlice
+}
+
+func (jpy *JiraProjectYamlConfig) ReturnIssuesTypesSlice() []string {
+  issuesSlice := make([]string, len(jpy.Keywords))
+  i := 0
+  for _, key := range jpy.Keywords {
+    issuesSlice[i] = key.IssueType
+    i++
+  }
+  return issuesSlice
 }
 
 func parseYamlConfigFile(filePath string) (*JiraProjectYamlConfig, error) {
