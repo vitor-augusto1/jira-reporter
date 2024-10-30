@@ -91,7 +91,7 @@ func (wl *Weasel) returnTodoFromLine(
 	filePath string,
 ) *Todo {
 	for _, keyword := range wl.Keywords {
-		todo := regexp.MustCompile(wl.todoRegex(keyword))
+		todo := regexp.MustCompile(wl.TodoRegex(keyword))
 		groups := todo.FindStringSubmatch(lineContent)
 		if groups != nil {
 			prefix := groups[1]
@@ -111,8 +111,18 @@ func (wl *Weasel) returnTodoFromLine(
 	return nil
 }
 
-func (wl Weasel) todoRegex(keyword string) string {
+func (wl Weasel) TodoRegex(keyword string) string {
 	return "^(.*)" + "(" + regexp.QuoteMeta(keyword) + ")" + " P([1-5])" + ": (.*)$"
+}
+
+func (wl Weasel) RemoteIsAGithubRepo(str string) bool {
+	matched, _ := regexp.MatchString("https://github.", str)
+	return matched
+}
+
+func (wl Weasel) RemoteIsAGitlabRepo(str string) bool {
+	matched, _ := regexp.MatchString("https://gitlab.", str)
+	return matched
 }
 
 func (wl Weasel) GetProjectCurrentBranch() string {
@@ -138,11 +148,24 @@ func (wl *Weasel) LoadProjectFiles() {
 	wl.Files = strings.Split(output, "\n")
 }
 
+func (wl *Weasel) GetRemoteBlobPath(filePath string, line uint64) string {
+	if wl.RemoteIsAGithubRepo(wl.baseRemoteUrl) {
+		return fmt.Sprintf(
+			"%s/blob/%s/%s/#L%d",
+			wl.baseRemoteUrl, wl.GetProjectCurrentBranch(), filePath, line,
+		)
+	}
+	if wl.RemoteIsAGitlabRepo(wl.baseRemoteUrl) {
+    return fmt.Sprintf(
+      "%s/-/blob/%s/%s#L%d",
+      wl.baseRemoteUrl, wl.GetProjectCurrentBranch(), filePath, line,
+    )
+	}
+	return ""
+}
+
 func (wl Weasel) StoreTodoFullRemoteAddrs(todo *Todo) {
-	rtAddr := fmt.Sprintf(
-		"%s/blob/%s/%s/#L%d",
-		wl.baseRemoteUrl, wl.GetProjectCurrentBranch(), todo.FilePath, todo.Line,
-	)
+  rtAddr := wl.GetRemoteBlobPath(todo.FilePath, todo.Line)
 	todo.RemoteAddr = rtAddr
 	todo.Body = append(todo.Body, todo.RemoteAddr)
 }

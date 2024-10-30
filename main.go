@@ -36,7 +36,7 @@ func main() {
 		Keywords:      keywordSlice,
 		baseRemoteUrl: parsedJiraConfig.RepoURL,
 	}
-	fmt.Fprintf(os.Stdout, "TODO regex: %s\n", wsl.todoRegex("TODO"))
+	fmt.Fprintf(os.Stdout, "TODO regex: %s\n", wsl.TodoRegex("TODO"))
 	// TODO: Implement depth searchs reports. Visit every file in the "dirs" param
 	issuesToReport := []*Issue{}
   wsl.LoadProjectFiles()
