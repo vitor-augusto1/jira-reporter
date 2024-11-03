@@ -101,8 +101,8 @@ func (jc *JiraClient) ReportIssueAsJiraTicket(issue *Issue) (*CreatedIssueRespon
 
 func (jc *JiraClient) HandleResponseStatusCode(resp *http.Response) *RequestError {
 	requestError := &RequestError{}
-	stCode := resp.StatusCode
-	switch stCode {
+	responseStatusCode := resp.StatusCode
+	switch responseStatusCode {
 	case http.StatusOK:
 		return nil
 	case http.StatusUnauthorized:
