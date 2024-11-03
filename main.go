@@ -5,8 +5,6 @@ import (
 	"os"
 )
 
-var DEFAULT_KEYWORDS = []string{"TODO", "FIXME", "REFACTOR"}
-
 func main() {
 	parsedJiraConfig, err := parseYamlConfigFile("./test.yaml")
 	if err != nil {
@@ -67,6 +65,8 @@ func main() {
     }
 	}
 }
+
+var DEFAULT_KEYWORDS = []string{"TODO", "FIXME", "REFACTOR"}
 
 // Returns new instance of JiraClient
 func NewJiraClient(creds *JiraBasicAuthCreds, bURL string) *JiraClient {

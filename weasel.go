@@ -3,11 +3,13 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"regexp"
 	"strings"
+
+	"github.com/vitor-augusto1/jira-weasel/pkg/assert"
+	"github.com/vitor-augusto1/jira-weasel/pkg/colors"
 )
 
 type Weasel struct {
@@ -64,27 +66,6 @@ func (wl *Weasel) VisitAndReportWeaselFiles(ttr TodoTransformer) error {
 	return nil
 }
 
-// Back tracks to a specific line based on the offset
-func (wl *Weasel) BackTrackLine(
-	file *os.File,
-	offset int64,
-	handler func(string) string,
-) error {
-	_, err := file.Seek(offset, io.SeekStart)
-	if err != nil {
-		return fmt.Errorf(
-			"Could not back track to the line. Byte offset %d: %v", offset, err,
-		)
-	}
-	scanner := bufio.NewScanner(file)
-	if scanner.Scan() {
-		fmt.Println("BACKTRACTED LINE CONTENT ::: ", scanner.Text())
-		handler(scanner.Text())
-		return nil
-	}
-	return nil
-}
-
 func (wl *Weasel) returnTodoFromLine(
 	lineContent string,
 	lineNumber uint64,
@@ -128,22 +109,15 @@ func (wl Weasel) RemoteIsAGitlabRepo(str string) bool {
 func (wl Weasel) GetProjectCurrentBranch() string {
 	cmd := exec.Command("git", "branch", "--show-current")
 	stdout, err := cmd.Output()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting the current git branch.\n%s\n", err)
-		return ""
-	}
+  assert.NoError(err, "Error getting the current git branch. Please check if the current directory is a git work tree.")
 	cb := strings.TrimSpace(string(stdout))
 	return cb
 }
 
-// Load the tracked project's files
 func (wl *Weasel) LoadProjectFiles() {
 	cmd := exec.Command("git", "ls-files", "--full-name")
 	stdout, err := cmd.Output()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting the project's files.\n%s\n", err)
-		os.Exit(1)
-	}
+  assert.NoError(err, "Error getting the project's files. Make sure the current directory is a git work tree.\n")
 	output := strings.TrimSpace(string(stdout))
 	wl.Files = strings.Split(output, "\n")
 }
@@ -156,16 +130,24 @@ func (wl *Weasel) GetRemoteBlobPath(filePath string, line uint64) string {
 		)
 	}
 	if wl.RemoteIsAGitlabRepo(wl.baseRemoteUrl) {
-    return fmt.Sprintf(
-      "%s/-/blob/%s/%s#L%d",
-      wl.baseRemoteUrl, wl.GetProjectCurrentBranch(), filePath, line,
-    )
+		return fmt.Sprintf(
+			"%s/-/blob/%s/%s#L%d",
+			wl.baseRemoteUrl, wl.GetProjectCurrentBranch(), filePath, line,
+		)
 	}
+	failedMessage := fmt.Sprintf(
+		"Failed to store the remote todo blob. Remote is not a github nor a gitlab repo. Remote: %s",
+		wl.baseRemoteUrl,
+	)
+	fmt.Fprintf(os.Stderr, colors.Error(failedMessage))
 	return ""
 }
 
 func (wl Weasel) StoreTodoFullRemoteAddrs(todo *Todo) {
-  rtAddr := wl.GetRemoteBlobPath(todo.FilePath, todo.Line)
-	todo.RemoteAddr = rtAddr
+	assert.NotNil(todo, "expected todo to be a *Todo but got nil", "todo", todo)
+	remoteAddr := wl.GetRemoteBlobPath(todo.FilePath, todo.Line)
+	todo.RemoteAddr = remoteAddr
 	todo.Body = append(todo.Body, todo.RemoteAddr)
 }
+
+func (wl Weasel) PurgeReportedTodos() {}
