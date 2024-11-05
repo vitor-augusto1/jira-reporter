@@ -127,6 +127,8 @@ func (wl *Weasel) LoadProjectFiles() {
 }
 
 func (wl *Weasel) GetRemoteBlobPath(filePath string, line uint64) string {
+  assert.Assert(len(filePath) > 0, "invalid file path was provided")
+  assert.Assert(line > 0, "invalid line number was provided")
 	if wl.RemoteIsAGithubRepo(wl.baseRemoteUrl) {
 		return fmt.Sprintf(
 			"%s/blob/%s/%s/#L%d",
