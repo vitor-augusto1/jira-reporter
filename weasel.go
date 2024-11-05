@@ -96,6 +96,10 @@ func (wl Weasel) TodoRegex(keyword string) string {
 	return "^(.*)" + "(" + regexp.QuoteMeta(keyword) + ")" + " P([1-5])" + ": (.*)$"
 }
 
+func (wl Weasel) ReportedTodoRegex(keyword string) string {
+	return "^(.*)" + "(" + regexp.QuoteMeta(keyword) + ")" + " P([1-5]) " + "\\((.*)\\)" + ": (.*)$"
+}
+
 func (wl Weasel) RemoteIsAGithubRepo(str string) bool {
 	matched, _ := regexp.MatchString("https://github.", str)
 	return matched
