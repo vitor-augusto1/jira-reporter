@@ -7,6 +7,8 @@ import (
 	"io"
 	"net/http"
 	"os"
+
+	"github.com/vitor-augusto1/jira-weasel/pkg/assert"
 )
 
 const (
@@ -27,7 +29,8 @@ type JiraClient struct {
 	baseURL string
 }
 
-func (jc *JiraClient) CreateNewIssueFromTODO(td Todo, issueTp IssueType) *Issue {
+func (jc JiraClient) CreateNewIssueFromTODO(td Todo, issueTp IssueType) *Issue {
+  assert.Nil(td.ReportedID, "Already reported todo passed", "ReportedId", *td.ReportedID)
 	newIssue := NewIssue()
 	newIssue.Description = IssueDescription{
 		Type:    "doc",
