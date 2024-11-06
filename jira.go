@@ -55,6 +55,11 @@ func (jc JiraClient) CreateNewIssueFromTODO(td Todo, issueTp IssueType) *Issue {
 	return newIssue
 }
 
+func CheckJiraIssueStatusFromAnExistingTodo(td Todo) string {
+  assert.NotNil(td.ReportedID, "checking status of an unreported todo", "td.ReportedId", *td.ReportedID)
+  return ""
+}
+
 // Creates a new jira issue
 func (jc *JiraClient) ReportIssueAsJiraTicket(issue *Issue) (*CreatedIssueResponse, error) {
 	var CREATE_ISSUE_URL string = jc.baseURL + NEW_ISSUE_PATH
@@ -102,7 +107,8 @@ func (jc *JiraClient) ReportIssueAsJiraTicket(issue *Issue) (*CreatedIssueRespon
 	return createdIssueResp, nil
 }
 
-func (jc *JiraClient) HandleResponseStatusCode(resp *http.Response) *RequestError {
+// TODO: Update this ugly ass func
+func (jc JiraClient) HandleResponseStatusCode(resp *http.Response) *RequestError {
 	requestError := &RequestError{}
 	responseStatusCode := resp.StatusCode
 	switch responseStatusCode {
