@@ -38,7 +38,7 @@ func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 		lineOffsets = append(lineOffsets, currentOffset)
 		currentOffset += uint64(len(line)) + 1
 		if todo == nil {
-			todo = wl.returnTodoFromLine(line, currentLineNumber, filePath)
+			todo = wl.GrabTodoFromLine(line, currentLineNumber, filePath)
 			continue
 		}
 		lineIsPartOfTheTodoBody := todo.LineHasTodoPrefix(line)
@@ -66,7 +66,7 @@ func (wl *Weasel) VisitAndReportWeaselFiles(ttr TodoTransformer) error {
 	return nil
 }
 
-func (wl *Weasel) returnTodoFromLine(
+func (wl *Weasel) returnNewTodoFromLine(
 	lineContent string,
 	lineNumber uint64,
 	filePath string,
@@ -92,6 +92,50 @@ func (wl *Weasel) returnTodoFromLine(
 	return nil
 }
 
+func (wl *Weasel) returnReportedTodoFromLine(
+	lineContent string,
+	lineNumber uint64,
+	filePath string,
+) *Todo {
+	for _, keyword := range wl.Keywords {
+		todo := regexp.MustCompile(wl.ReportedTodoRegex(keyword))
+		groups := todo.FindStringSubmatch(lineContent)
+		if groups != nil {
+			prefix := groups[1]
+			keyword := groups[2]
+			priority := groups[3]
+			reportedId := groups[4]
+			title := groups[5]
+			return &Todo{
+				Prefix:     prefix,
+				Keyword:    keyword,
+				Priority:   PrioritiesID(priority),
+				Title:      title,
+				FilePath:   filePath,
+				Line:       lineNumber,
+				ReportedID: &reportedId,
+			}
+		}
+	}
+	return nil
+}
+
+func (wl Weasel) GrabTodoFromLine(
+	lineContent string,
+	lineNumber uint64,
+	filePath string,
+) *Todo {
+	if todo := wl.returnNewTodoFromLine(lineContent, lineNumber, filePath); todo != nil {
+		fmt.Println("New unreported todo found")
+		return todo
+	}
+	if todo := wl.returnReportedTodoFromLine(lineContent, lineNumber, filePath); todo != nil {
+		fmt.Println("Alredy reported todo found")
+		return todo
+	}
+	return nil
+}
+
 func (wl Weasel) TodoRegex(keyword string) string {
 	return "^(.*)" + "(" + regexp.QuoteMeta(keyword) + ")" + " P([1-5])" + ": (.*)$"
 }
@@ -113,7 +157,7 @@ func (wl Weasel) RemoteIsAGitlabRepo(str string) bool {
 func (wl Weasel) GetProjectCurrentBranch() string {
 	cmd := exec.Command("git", "branch", "--show-current")
 	stdout, err := cmd.Output()
-  assert.NoError(err, "Error getting the current git branch. Please check if the current directory is a git work tree.")
+	assert.NoError(err, "Error getting the current git branch. Please check if the current directory is a git work tree.")
 	cb := strings.TrimSpace(string(stdout))
 	return cb
 }
@@ -121,14 +165,14 @@ func (wl Weasel) GetProjectCurrentBranch() string {
 func (wl *Weasel) LoadProjectFiles() {
 	cmd := exec.Command("git", "ls-files", "--full-name")
 	stdout, err := cmd.Output()
-  assert.NoError(err, "Error getting the project's files. Make sure the current directory is a git work tree.\n")
+	assert.NoError(err, "Error getting the project's files. Make sure the current directory is a git work tree.\n")
 	output := strings.TrimSpace(string(stdout))
 	wl.Files = strings.Split(output, "\n")
 }
 
 func (wl *Weasel) GetRemoteBlobPath(filePath string, line uint64) string {
-  assert.Assert(len(filePath) > 0, "invalid file path was provided")
-  assert.Assert(line > 0, "invalid line number was provided")
+	assert.Assert(len(filePath) > 0, "invalid file path was provided")
+	assert.Assert(line > 0, "invalid line number was provided")
 	if wl.RemoteIsAGithubRepo(wl.baseRemoteUrl) {
 		return fmt.Sprintf(
 			"%s/blob/%s/%s/#L%d",
