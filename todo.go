@@ -34,24 +34,23 @@ func (td *Todo) LineHasTodoPrefix(line string) *string {
 	return nil
 }
 
-func (td *Todo) CommitReportedTodo() error {
-  if td.ReportedID != nil {
-    addCmd := exec.Command("git", "add", td.FilePath)
-    err := addCmd.Run()
-    if err != nil {
-      fmt.Fprintf(os.Stderr, "Can't add changes: '%s'.\n", err)
-      return err
-    }
-    commitMessage := fmt.Sprintf("weasel: Report TODO (%s)", *td.ReportedID)
-    commitCmd := exec.Command("git", "commit", "-m", commitMessage)
-    err = commitCmd.Run()
-    if err != nil {
-      fmt.Fprintf(os.Stderr, "Can't commit changes: '%s'.\n", err)
-      return err
-    }
-    return nil
-  }
-  return errors.New("Commiting unreported todo")
+func (td *Todo) CommitTodoUpdate(commitMessage string) error {
+	if td.ReportedID != nil {
+		addCmd := exec.Command("git", "add", td.FilePath)
+		err := addCmd.Run()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Can't add changes: '%s'.\n", err)
+			return err
+		}
+		commitCmd := exec.Command("git", "commit", "-m", commitMessage)
+		err = commitCmd.Run()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Can't commit changes: '%s'.\n", err)
+			return err
+		}
+		return nil
+	}
+	return errors.New("Error commiting changes")
 }
 
 func (td *Todo) UpdatedTodoString(defaultStr string) string {
