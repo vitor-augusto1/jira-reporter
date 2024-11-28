@@ -31,36 +31,50 @@ func init() {
 }
 
 func main() {
-	parsedJiraConfig, err := parseYamlConfigFile("./test.yaml")
+	// TODO: Add ui with bubbletea
+	CheckIfCurrentDirectoryIsAGitRepository()
+	CheckIfWeaselConfigFileExists()
+	var conf *Config
+	conf, err := LoadConfigs("./weasel.toml")
+	assert.NotNil(conf, "conf cannot be nil", "conf", conf)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing the yaml config file.\n%s\n", err)
+		logger.LogErrorExitingOne("There is an error with you config file. Please check it again.")
 	}
-  sliceContainsValidIssuesType(
-    parsedJiraConfig.ReturnIssuesTypesSlice(),
-    map[string]bool{"Bug": true, "Task": true},
-    func(invalidType string) {
-      fmt.Fprintf(
-        os.Stderr,
-        "An invalid issue type was provided in your yaml config file: '%s'\n",
-        invalidType,
-      )
-      os.Exit(1)
-    },
-  )
 	creds := NewJiraBasicAuthCreds()
-	creds.username = os.Getenv("PROJECT_USERNAME")
-	creds.password = os.Getenv("PROJECT_PASSWORD")
-  keywordSlice := parsedJiraConfig.ReturnKeywordSlice()
-  if len(keywordSlice) == 0 {
-    keywordSlice = DEFAULT_KEYWORDS
-  }
-	jc := NewJiraClient(creds, parsedJiraConfig.Jira.Project.BaseUrl)
-	wsl := Weasel{
-		Keywords:      keywordSlice,
-		baseRemoteUrl: parsedJiraConfig.RepoURL,
+	assert.NotNil(creds, "creds cannot be nil", "creds", creds)
+	creds.username = conf.Credentials.Username
+	creds.password = conf.Credentials.Password
+	jiraClient := NewJiraClient(conf.Project.Url, creds.ReturnBasicAuthEncodedCredentials())
+	assert.NotNil(jiraClient, "jiraClient cannot be nil", "jiraClient", jiraClient)
+	keywords := conf.returnIssuesKeywordsSlice()
+	weasel := &Weasel{
+		Keywords:      keywords,
+		baseRemoteUrl: conf.Remote,
 	}
-	fmt.Fprintf(os.Stdout, "TODO regex: %s\n", wsl.TodoRegex("TODO"))
-	// TODO: Implement depth searchs reports. Visit every file in the "dirs" param
+	weasel.LoadProjectFiles()
+	var (
+		flagVar    bool
+		silentFlag bool
+	)
+	flag.BoolVarP(&flagVar, REPORT_FLAG_NAME.full, REPORT_FLAG_NAME.short, REPORT_FLAG_NAME.defaultV, static.REPORT_MESSAGE)
+	flag.BoolVarP(&flagVar, PURGE_FLAG_NAME.full, PURGE_FLAG_NAME.short, PURGE_FLAG_NAME.defaultV, static.PURGE_MESSAGE)
+	flag.BoolVarP(&flagVar, LIST_FLAG_NAME.full, LIST_FLAG_NAME.short, LIST_FLAG_NAME.defaultV, static.LIST_MESSAGE)
+	flag.BoolVarP(&silentFlag, QUIET_FLAG_NAME.full, QUIET_FLAG_NAME.short, QUIET_FLAG_NAME.defaultV, static.SILENT_MESSAGE)
+	flag.Parse()
+	if flag.Lookup(REPORT_FLAG_NAME.full).Changed {
+		reportCommand(weasel, jiraClient, &conf.Keywords, silentFlag, static.Banner)
+	} else if flag.Lookup(PURGE_FLAG_NAME.full).Changed {
+		purgeCommand(weasel, jiraClient, silentFlag, static.Banner)
+	} else if flag.Lookup(LIST_FLAG_NAME.full).Changed {
+		listCommand(weasel, jiraClient, silentFlag, static.Banner)
+	} else {
+		helperCommand()
+		os.Exit(1)
+	}
+}
+
+// TODO: Add interative mode to the commands
+
 	issuesToReport := []*Issue{}
   wsl.LoadProjectFiles()
   wsl.VisitAndReportWeaselFiles(func (todo Todo) error {
