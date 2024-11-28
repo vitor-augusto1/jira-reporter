@@ -59,13 +59,6 @@ func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 	return nil
 }
 
-func (wl *Weasel) VisitAndReportWeaselFiles(ttr TodoTransformer) error {
-	for _, file := range wl.Files {
-		wl.searchTodos(file, ttr)
-	}
-	return nil
-}
-
 func (wl *Weasel) returnNewTodoFromLine(
 	lineContent string,
 	lineNumber uint64,
