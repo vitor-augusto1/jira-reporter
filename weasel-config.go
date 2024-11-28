@@ -43,3 +43,13 @@ func (c *Config) returnIssuesKeywordsSlice() []string {
 	return values
 }
 
+func (c *Config) configGotValidIssuesTypeInKeywords() {
+	validOnes := map[string]bool{"Bug": true, "Task": true}
+	issues := c.returnIssuesTypesSlice()
+	for _, item := range issues {
+		if !validOnes[item] {
+			logger.LogErrorExitingOne("There is an invalid issue type in your config file.")
+		}
+	}
+}
+
