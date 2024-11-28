@@ -34,3 +34,12 @@ func (c *Config) returnIssuesTypesSlice() []string {
 	}
 	return values
 }
+
+func (c *Config) returnIssuesKeywordsSlice() []string {
+	values := make([]string, 0, len(c.Keywords))
+	for key := range c.Keywords {
+    values = append(values, strings.ToUpper(key))
+	}
+	return values
+}
+
