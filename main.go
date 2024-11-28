@@ -114,31 +114,52 @@ func reportCommand(weasel *Weasel, jiraClient *JiraClient, keywordMap *map[strin
 	}
 }
 
+func purgeCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc func()) {
+	assert.NotNil(weasel, "weasel can't be nil", "weasel", weasel)
+	assert.NotNil(jiraClient, "jiraClient can't be nil", "jiraClient", jiraClient)
+	if !quiet {
+		bannerFunc()
+	}
+	todosToCheckStatus := []*Todo{}
+	todosToPurge := []*Todo{}
+	weasel.VisitTodosInWeaselFiles(func(td Todo) error {
+		if td.ReportedID != nil {
+			assert.NotNil(td.ReportedID, "Trying to purge an unreported todo", "t.ReportedID", td.ReportedID)
+			todosToCheckStatus = append(todosToCheckStatus, &td)
+		}
+		return nil
+	})
+	for _, td := range todosToCheckStatus {
+		status := jiraClient.CheckJiraIssueStatusFromAnExistingTodo(*td)
+		if len(status) > 0 {
+			if status == "done" || status == "DONE" {
+				todosToPurge = append(todosToPurge, td)
+			}
+		}
+	}
+	for _, td := range todosToPurge {
+		err := td.SelfPurge()
 		if err != nil {
 			fmt.Fprintf(
 				os.Stderr,
-				"Cant report the following issue: '%s'. Skipping for now.\n",
-				issue.Summary,
+				colors.Error(fmt.Sprintf("Error trying to purge the todo of id: '%s'. Skipping for now.\n%s", *td.ReportedID, err)),
 			)
+			continue
 		}
-    issue.Todo.ReportedID = &createdIssueResp.Key
-    err = issue.Todo.ChangeTodoStatus()
-    if err != nil {
-      continue
-    }
-    err = issue.Todo.CommitReportedTodo()
-    if err != nil {
-      continue
-    }
+		commitMessage := fmt.Sprintf("weasel: Purge TODO (%s)", *td.ReportedID)
+		err = td.CommitTodoUpdate(commitMessage)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Can't commit changes: '%s'.\n", err)
+		}
 	}
 }
 
-var DEFAULT_KEYWORDS = []string{"TODO", "FIXME", "REFACTOR"}
-
-// Returns new instance of JiraClient
-func NewJiraClient(creds *JiraBasicAuthCreds, bURL string) *JiraClient {
-	return &JiraClient{
-		creds:   creds,
-		baseURL: bURL,
+func listCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc func()) {
+	if !quiet {
+		bannerFunc()
 	}
+}
+
+func helperCommand() {
+	flag.Usage()
 }
