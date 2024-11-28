@@ -1,36 +1,47 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
-	"fmt"
-	"io"
 	"net/http"
-	"os"
 
+	"github.com/vitor-augusto1/jira-weasel/client"
 	"github.com/vitor-augusto1/jira-weasel/pkg/assert"
 )
 
-const (
-	ALL_PROJECTS_PATH string = "/project/search"
-	NEW_ISSUE_PATH    string = "/issue"
-)
-
 type CreatedIssueResponse struct {
-  Id   string `json:"id"`
-  Key  string `json:"key"`
-  Self string `json:"self"`
+	Id   string `json:"id"`
+	Key  string `json:"key"`
+	Self string `json:"self"`
+}
+
+type IssueStatusResponse struct {
+	Fields struct {
+		Status struct {
+			StatusCategory struct {
+				Self      string `json:"self"`
+				Id        uint64 `json:"id"`
+				Key       string `json:"key"`
+				ColorName string `json:"colorName"`
+				Name      string `json:"name"`
+			} `json:"statusCategory"`
+		} `json:"status"`
+	} `json:"fields"`
 }
 
 type RequestStatusCode uint16
 
 type JiraClient struct {
-	creds   *JiraBasicAuthCreds
-	baseURL string
+	HttpClient *client.HttpClient
+}
+
+// Returns new instance of JiraClient
+func NewJiraClient(bURL, encodedCredentials string) *JiraClient {
+	return &JiraClient{
+		HttpClient: client.NewHttpClient(bURL, "Basic "+encodedCredentials),
+	}
 }
 
 func (jc JiraClient) CreateNewIssueFromTODO(td Todo, issueTp IssueType) *Issue {
-  assert.Nil(td.ReportedID, "Already reported todo passed", "ReportedId", *td.ReportedID)
+	assert.Nil(td.ReportedID, "Already reported todo passed", "ReportedId", td.ReportedID)
 	newIssue := NewIssue()
 	newIssue.Description = IssueDescription{
 		Type:    "doc",
@@ -51,63 +62,44 @@ func (jc JiraClient) CreateNewIssueFromTODO(td Todo, issueTp IssueType) *Issue {
 	newIssue.IssueTypeName = Name{Name: issueTp}
 	newIssue.Project = Key{Key: "SCRUM"}
 	newIssue.Summary = td.Title
-  newIssue.Todo = td
+	newIssue.Todo = td
 	return newIssue
 }
 
-func CheckJiraIssueStatusFromAnExistingTodo(td Todo) string {
-  assert.NotNil(td.ReportedID, "checking status of an unreported todo", "td.ReportedId", *td.ReportedID)
-  return ""
+func (jc *JiraClient) CheckJiraIssueStatusFromAnExistingTodo(td Todo) string {
+	assert.NotNil(td.ReportedID, "checking issue status of an unreported todo", "td.ReportedId", *td.ReportedID)
+	var issueStatusResponse IssueStatusResponse
+	requestOpts := &client.RequestOptions{
+		Method:   http.MethodGet,
+		Path:     "/issue/" + *td.ReportedID + "?fields=status",
+		Payload:  nil,
+		Response: &issueStatusResponse,
+		Headers:  nil,
+	}
+	jc.HttpClient.DoRequest(requestOpts, func(err error) {
+		assert.NoError(err, "Error trying to check an issue status")
+	})
+	return issueStatusResponse.Fields.Status.StatusCategory.Key
 }
 
 // Creates a new jira issue
 func (jc *JiraClient) ReportIssueAsJiraTicket(issue *Issue) (*CreatedIssueResponse, error) {
-	var CREATE_ISSUE_URL string = jc.baseURL + NEW_ISSUE_PATH
-	client := &http.Client{}
-	structPayload := IssuePayload{
-		Fields: issue,
+  assert.NotNil(issue, "issue parameter cannot be nil", "issue", issue)
+	var createdIssueResp CreatedIssueResponse
+	requestOpts := &client.RequestOptions{
+		Method:   http.MethodPost,
+		Path:     "/issue",
+		Payload:  IssuePayload{Fields: issue},
+		Response: &createdIssueResp,
+		Headers:  nil,
 	}
-	body, _ := json.Marshal(structPayload)
-	payload := bytes.NewBuffer(body)
-	req, err := http.NewRequest(http.MethodPost, CREATE_ISSUE_URL, payload)
-	if err != nil {
-		fmt.Fprintf(
-			os.Stderr,
-			"Error. Cannot create a new request wrapper:\n%s",
-			err,
-		)
-		return nil, err
-	}
-	req.Header.Add("Authorization", "Basic "+jc.creds.ReturnEncodedCredentials())
-	req.Header.Add("Content-Type", "application/json")
-	resp, err := client.Do(req)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error. Cannot send the request:\n%s", err)
-		return nil, err
-	}
-	requestErr := jc.HandleResponseStatusCode(resp)
-	if requestErr != nil {
-		resp.Body.Close()
-		fmt.Fprintf(os.Stderr, requestErr.Error())
-		os.Exit(1)
-	}
-	defer resp.Body.Close()
-	body, err = io.ReadAll(resp.Body)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading response body: \n%s", err)
-		return nil, err
-	}
-  var createdIssueResp *CreatedIssueResponse
-  err = json.Unmarshal(body, &createdIssueResp)
-  if err != nil {
-		fmt.Fprintf(os.Stderr, "💢 %s\n", err)
-		os.Exit(1)
-  }
-	fmt.Fprintf(os.Stdout, "🔊 Issue reported: '%s'\n", issue.Summary)
-	return createdIssueResp, nil
+	jc.HttpClient.DoRequest(requestOpts, func(err error) {
+		assert.NoError(err, "Error trying to check an issue status")
+	})
+	return &createdIssueResp, nil
 }
 
-// TODO: Update this ugly ass func
+// TODO: Update this ugly ass function
 func (jc JiraClient) HandleResponseStatusCode(resp *http.Response) *RequestError {
 	requestError := &RequestError{}
 	responseStatusCode := resp.StatusCode
