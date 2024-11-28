@@ -150,23 +150,33 @@ func (td *Todo) ChangeTodoStatusToReported() error {
 	return nil
 }
 
+func (td *Todo) SelfPurge() error {
+	fmt.Println("Purging todo: ", *td.ReportedID)
+	tmpFileName := "/tmp/tmp-weasel.weasel"
+	tmpFile, err := os.Create(tmpFileName)
+	assert.NoError(err, "Can't create the tmp file")
+	defer tmpFile.Close()
+	todoFile, err := os.Open(td.FilePath)
+	assert.NoError(err, "Can't open the todo file", "td.FilePath", td.FilePath)
+	defer todoFile.Close()
+	todoFileInfo, _ := os.Stat(td.FilePath)
+	scanner := bufio.NewScanner(todoFile)
+	lnn := uint64(0)
+	for scanner.Scan() {
+		lnContent := scanner.Text()
+		if td.Line == (lnn + 1) {
+			continue
+		}
+    lineIsPartOfTheTodoBody := td.LineHasTodoPrefix(lnContent)
+		if lineIsPartOfTheTodoBody != nil && lnn > td.Line {
+			continue
+		}
+		fmt.Fprintln(tmpFile, lnContent)
+		lnn++
+	}
   err = os.Chmod(tmpFileName, todoFileInfo.Mode())
-  if err != nil {
-    fmt.Fprintf(
-      os.Stderr,
-      "Can't set permissions: '%s'. Skipping for now.\n",
-      err,
-    )
-    return err
-  }
+  assert.NoError(err, "Can't set permissions")
   err = os.Rename(tmpFileName, td.FilePath)
-  if err != nil {
-    fmt.Fprintf(
-      os.Stderr,
-      "Can't rename the file: '%s'. Skipping for now.\n",
-      err,
-    )
-    return err
-  }
-  return nil
+  assert.NoError(err, "Can't change file name")
+	return nil
 }
