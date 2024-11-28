@@ -205,4 +205,9 @@ func (wl Weasel) StoreTodoFullRemoteAddrs(todo *Todo) {
 	todo.Body = append(todo.Body, todo.RemoteAddr)
 }
 
-func (wl Weasel) PurgeReportedTodos() {}
+func (wl *Weasel) VisitTodosInWeaselFiles(ttr TodoTransformer) error {
+	for _, file := range wl.Files {
+		wl.searchTodos(file, ttr)
+	}
+	return nil
+}
