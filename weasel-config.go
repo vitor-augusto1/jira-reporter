@@ -67,3 +67,12 @@ func CheckIfWeaselConfigFileExists() {
 	}
 }
 
+func LoadConfigs(filePath string) (*Config, error) {
+	var config Config
+	config.Keywords = make(map[string]string)
+	if _, err := toml.DecodeFile(filePath, &config); err != nil {
+		return nil, err
+	}
+	// config.configGotValidIssuesTypeInKeywords()
+	return &config, nil
+}
