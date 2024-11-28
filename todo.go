@@ -94,41 +94,62 @@ func (td *Todo) StringBody() string {
 }
 
 // Changes the Todo status in its line
-func (td *Todo) ChangeTodoStatus() error {
-  fmt.Println("Changing the todo status...")
-  tmpFileName := "tmp-wasel.weasel"
-  tmpFile, err := os.Create(tmpFileName)
-  if err != nil {
-			fmt.Fprintf(
-				os.Stderr,
-				"Can't create the tmp file: '%s'. Skipping for now.\n",
-        err,
-			)
-      return err
-  }
-  defer tmpFile.Close()
-  todoFile, err := os.Open(td.FilePath)
-  if err != nil {
-    fmt.Fprintf(
-      os.Stderr,
-      "Can't open the Todo file: '%s'. Skipping for now.\n",
-      err,
-    )
-    return err
-  }
-  defer todoFile.Close()
-  todoFileInfo, _ := os.Stat(td.FilePath)
+func (td *Todo) ChangeTodoStatusToReported() error {
+	fmt.Println("Changing the todo status...")
+	tmpFileName := "/tmp/tmp-wasel.weasel"
+	tmpFile, err := os.Create(tmpFileName)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Can't create the tmp file: '%s'. Skipping for now.\n",
+			err,
+		)
+		return err
+	}
+	defer tmpFile.Close()
+	todoFile, err := os.Open(td.FilePath)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Can't open the Todo file: '%s'. Skipping for now.\n",
+			err,
+		)
+		return err
+	}
+	defer todoFile.Close()
+	todoFileInfo, _ := os.Stat(td.FilePath)
 	scanner := bufio.NewScanner(todoFile)
-  lnn := uint64(0)
-  for scanner.Scan() {
-    lnContent := scanner.Text()
-    if td.Line == (lnn + 1) {
-      fmt.Fprintln(tmpFile, td.UpdatedTodoString(lnContent))
-    } else {
-      fmt.Fprintln(tmpFile, lnContent)
-    }
-    lnn++
-  }
+	lnn := uint64(0)
+	for scanner.Scan() {
+		lnContent := scanner.Text()
+		if td.Line == (lnn + 1) {
+			fmt.Fprintln(tmpFile, td.UpdatedTodoString(lnContent))
+		} else {
+			fmt.Fprintln(tmpFile, lnContent)
+		}
+		lnn++
+	}
+	err = os.Chmod(tmpFileName, todoFileInfo.Mode())
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Can't set permissions: '%s'. Skipping for now.\n",
+			err,
+		)
+		return err
+	}
+	err = os.Rename(tmpFileName, td.FilePath)
+	if err != nil {
+		fmt.Fprintf(
+			os.Stderr,
+			"Can't rename the file: '%s'. Skipping for now.\n",
+			err,
+		)
+		return err
+	}
+	return nil
+}
+
   err = os.Chmod(tmpFileName, todoFileInfo.Mode())
   if err != nil {
     fmt.Fprintf(
