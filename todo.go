@@ -7,18 +7,21 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/vitor-augusto1/jira-weasel/pkg/assert"
 )
 
 type Todo struct {
-	Prefix      string
-	Keyword     string
-	Priority    PrioritiesID
-	Title       string
-	Body        []string
-	FilePath    string
-	Line        uint64
-	RemoteAddr  string
-	ReportedID  *string
+	Prefix     string
+	Keyword    string
+	Priority   PrioritiesID
+	Title      string
+	Body       []string
+	FilePath   string
+	Line       uint64
+	RemoteAddr string
+	ReportedID *string
+	Regex      string
 }
 
 type TodoTransformer func(Todo) error
