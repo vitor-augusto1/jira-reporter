@@ -75,17 +75,45 @@ func main() {
 
 // TODO: Add interative mode to the commands
 
+func reportCommand(weasel *Weasel, jiraClient *JiraClient, keywordMap *map[string]string, quiet bool, bannerFunc func()) {
+	assert.NotNil(weasel, "weasel can't be nil", "weasel", weasel)
+	assert.NotNil(jiraClient, "jiraClient can't be nil", "jiraClient", jiraClient)
+	assert.NotNil(keywordMap, "keywordMap can't be nil", "keywordMap", keywordMap)
+	if !quiet {
+		bannerFunc()
+	}
 	issuesToReport := []*Issue{}
-  wsl.LoadProjectFiles()
-  wsl.VisitAndReportWeaselFiles(func (todo Todo) error {
-    issue := jc.CreateNewIssueFromTODO(todo, parsedJiraConfig.Keywords[todo.Keyword].IssueType)
-    if issue != nil {
-      issuesToReport = append(issuesToReport, issue)
-    }
-    return nil
-  })
+	weasel.VisitTodosInWeaselFiles(func(t Todo) error {
+		if t.ReportedID != nil {
+			return nil
+		}
+		assert.Nil(t.ReportedID, "Trying to report an already reported todo.", "t.ReportedID", t.ReportedID)
+		mappedKeyword, ok := (*keywordMap)[t.Keyword]
+		assert.Assert(ok, "The provided todo keyword was not mapped", "t.Keyword", t.Keyword)
+		issue := jiraClient.CreateNewIssueFromTODO(t, mappedKeyword)
+		if issue != nil {
+			issuesToReport = append(issuesToReport, issue)
+		}
+		return nil
+	})
 	for _, issue := range issuesToReport {
-		createdIssueResp, err := jc.ReportIssueAsJiraTicket(issue)
+		createdIssueResp, err := jiraClient.ReportIssueAsJiraTicket(issue)
+		if err != nil {
+			logger.LogErrorExitingOne(fmt.Sprintf("Can't report the following issue: '%s'. Skipping for now.\n", issue.Summary))
+		}
+		issue.Todo.ReportedID = &createdIssueResp.Key
+		err = issue.Todo.ChangeTodoStatusToReported()
+		if err != nil {
+			continue
+		}
+		commitMessage := fmt.Sprintf("weasel: Report TODO (%s)", *issue.Todo.ReportedID)
+		err = issue.Todo.CommitTodoUpdate(commitMessage)
+		if err != nil {
+			continue
+		}
+	}
+}
+
 		if err != nil {
 			fmt.Fprintf(
 				os.Stderr,
