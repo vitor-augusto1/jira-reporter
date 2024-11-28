@@ -53,3 +53,11 @@ func (c *Config) configGotValidIssuesTypeInKeywords() {
 	}
 }
 
+func CheckIfCurrentDirectoryIsAGitRepository() {
+	cmd := exec.Command("git", "rev-parse", "--is-inside-work-tree")
+	err := cmd.Run()
+	if err != nil {
+		logger.LogErrorExitingOne("Error trying to run jira-weasel outside of a git working tree")
+	}
+}
+
