@@ -3,7 +3,19 @@ package main
 import (
 	"fmt"
 	"os"
+
+	flag "github.com/spf13/pflag"
+	"github.com/vitor-augusto1/jira-weasel/pkg/assert"
+	"github.com/vitor-augusto1/jira-weasel/pkg/colors"
+	"github.com/vitor-augusto1/jira-weasel/pkg/logger"
+	"github.com/vitor-augusto1/jira-weasel/static"
 )
+
+type Flag[T any] struct {
+	full     string
+	short    string
+	defaultV T
+}
 
 func main() {
 	parsedJiraConfig, err := parseYamlConfigFile("./test.yaml")
