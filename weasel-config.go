@@ -27,3 +27,10 @@ type Config struct {
 	Keywords    map[string]string `toml:"keywords"`
 }
 
+func (c *Config) returnIssuesTypesSlice() []string {
+	values := make([]string, 0, len(c.Keywords))
+	for _, v := range c.Keywords {
+		values = append(values, v)
+	}
+	return values
+}
