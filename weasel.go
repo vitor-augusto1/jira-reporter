@@ -79,6 +79,7 @@ func (wl *Weasel) returnNewTodoFromLine(
 				Title:    title,
 				FilePath: filePath,
 				Line:     lineNumber,
+				Regex:    wl.TodoRegex(keyword),
 			}
 		}
 	}
@@ -107,6 +108,7 @@ func (wl *Weasel) returnReportedTodoFromLine(
 				FilePath:   filePath,
 				Line:       lineNumber,
 				ReportedID: &reportedId,
+				Regex:      wl.ReportedTodoRegex(keyword),
 			}
 		}
 	}
@@ -119,11 +121,21 @@ func (wl Weasel) GrabTodoFromLine(
 	filePath string,
 ) *Todo {
 	if todo := wl.returnNewTodoFromLine(lineContent, lineNumber, filePath); todo != nil {
-		fmt.Println("New unreported todo found")
+		assert.Nil(
+			todo.ReportedID,
+			"An already reported todo was mistakenly returned as an unreported todo",
+			"todo.ReportedID",
+			todo.ReportedID,
+		)
 		return todo
 	}
 	if todo := wl.returnReportedTodoFromLine(lineContent, lineNumber, filePath); todo != nil {
-		fmt.Println("Alredy reported todo found")
+		assert.NotNil(
+			todo.ReportedID,
+			"An unreported todo was mistakenly returned as a reported todo",
+			"todo.ReportedID",
+			todo.ReportedID,
+		)
 		return todo
 	}
 	return nil
