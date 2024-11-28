@@ -17,6 +17,19 @@ type Flag[T any] struct {
 	defaultV T
 }
 
+var (
+	REPORT_FLAG_NAME Flag[bool] = Flag[bool]{full: "report", short: "r", defaultV: false}
+	PURGE_FLAG_NAME  Flag[bool] = Flag[bool]{full: "purge", short: "p", defaultV: false}
+	LIST_FLAG_NAME   Flag[bool] = Flag[bool]{full: "list", short: "l", defaultV: false}
+	QUIET_FLAG_NAME  Flag[bool] = Flag[bool]{full: "quiet", short: "q", defaultV: false}
+
+	DEFAULT_KEYWORDS []string = []string{"TODO", "FIXME", "REFACTOR"}
+)
+
+func init() {
+	flag.Usage = static.WeaselDetails
+}
+
 func main() {
 	parsedJiraConfig, err := parseYamlConfigFile("./test.yaml")
 	if err != nil {
