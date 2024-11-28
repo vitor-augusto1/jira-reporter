@@ -61,3 +61,9 @@ func CheckIfCurrentDirectoryIsAGitRepository() {
 	}
 }
 
+func CheckIfWeaselConfigFileExists() {
+	if _, err := os.Stat("./weasel.toml"); errors.Is(err, os.ErrNotExist) {
+		logger.LogErrorExitingOne("Error trying to run jira-weasel outside of a git working tree")
+	}
+}
+
