@@ -54,19 +54,39 @@ func (td *Todo) CommitTodoUpdate(commitMessage string) error {
 }
 
 func (td *Todo) UpdatedTodoString(defaultStr string) string {
-  if td.ReportedID != nil {
-    updatedTodo := fmt.Sprintf(
-      "%s %s P%s (%s): %s",
-      td.Prefix,
-      td.Keyword,
-      td.Priority,
-      *td.ReportedID,
-      td.Title,
-    )
-    fmt.Println(">>> Updated todo content: ", updatedTodo)
-    return updatedTodo
-  }
-  return defaultStr
+	if td.ReportedID != nil {
+		updatedTodo := fmt.Sprintf(
+			"%s %s P%s (%s): %s",
+			td.Prefix,
+			td.Keyword,
+			td.Priority,
+			*td.ReportedID,
+			td.Title,
+		)
+		fmt.Println(">>> Updated todo content: ", updatedTodo)
+		return updatedTodo
+	}
+	return defaultStr
+}
+
+func (td *Todo) ReturnTodoFirstLine() string {
+	if td.ReportedID != nil {
+		return fmt.Sprintf(
+			"%s%s P%s (%s): %s",
+			td.Prefix,
+			td.Keyword,
+			td.Priority,
+			*td.ReportedID,
+			td.Title,
+		)
+	}
+	return fmt.Sprintf(
+		"%s%s P%s: %s",
+		td.Prefix,
+		td.Keyword,
+		td.Priority,
+		td.Title,
+	)
 }
 
 func (td *Todo) StringBody() string {
