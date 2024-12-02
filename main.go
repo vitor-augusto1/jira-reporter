@@ -3,11 +3,12 @@ package main
 import (
 	"fmt"
 	"os"
+	"sort"
 
 	flag "github.com/spf13/pflag"
+	"github.com/vitor-augusto1/jira-weasel/logger"
 	"github.com/vitor-augusto1/jira-weasel/pkg/assert"
 	"github.com/vitor-augusto1/jira-weasel/pkg/colors"
-	"github.com/vitor-augusto1/jira-weasel/pkg/logger"
 	"github.com/vitor-augusto1/jira-weasel/static"
 )
 
@@ -66,14 +67,12 @@ func main() {
 	} else if flag.Lookup(PURGE_FLAG_NAME.full).Changed {
 		purgeCommand(weasel, jiraClient, silentFlag, static.Banner)
 	} else if flag.Lookup(LIST_FLAG_NAME.full).Changed {
-		listCommand(weasel, jiraClient, silentFlag, static.Banner)
+		listCommand(weasel, silentFlag, static.Banner)
 	} else {
 		helperCommand()
 		os.Exit(1)
 	}
 }
-
-// TODO: Add interative mode to the commands
 
 func reportCommand(weasel *Weasel, jiraClient *JiraClient, keywordMap *map[string]string, quiet bool, bannerFunc func()) {
 	assert.NotNil(weasel, "weasel can't be nil", "weasel", weasel)
@@ -97,6 +96,15 @@ func reportCommand(weasel *Weasel, jiraClient *JiraClient, keywordMap *map[strin
 		return nil
 	})
 	for _, issue := range issuesToReport {
+		if !quiet {
+			fmt.Fprintf(
+				os.Stdout,
+				" 📢 Reporting a new '%s' [%s %s]\n\n",
+				colors.Info(issue.Todo.Keyword),
+				colors.Success(issue.Todo.FilePath),
+				colors.Success(fmt.Sprint(issue.Todo.Line)),
+			)
+		}
 		createdIssueResp, err := jiraClient.ReportIssueAsJiraTicket(issue)
 		if err != nil {
 			logger.LogErrorExitingOne(fmt.Sprintf("Can't report the following issue: '%s'. Skipping for now.\n", issue.Summary))
@@ -111,6 +119,9 @@ func reportCommand(weasel *Weasel, jiraClient *JiraClient, keywordMap *map[strin
 		if err != nil {
 			continue
 		}
+		if !quiet {
+			issue.Todo.PrintCurrentStatus()
+		}
 	}
 }
 
@@ -119,12 +130,17 @@ func purgeCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc
 	assert.NotNil(jiraClient, "jiraClient can't be nil", "jiraClient", jiraClient)
 	if !quiet {
 		bannerFunc()
+    fmt.Fprintf(
+      os.Stdout,
+      " 🧹 Purging %s TODOS...\n\n",
+      colors.Success("'DONE'"),
+    )
 	}
 	todosToCheckStatus := []*Todo{}
 	todosToPurge := []*Todo{}
 	weasel.VisitTodosInWeaselFiles(func(td Todo) error {
 		if td.ReportedID != nil {
-			assert.NotNil(td.ReportedID, "Trying to purge an unreported todo", "t.ReportedID", td.ReportedID)
+			assert.NotNil(td.ReportedID, "Trying to purge an unreported todo", "td.ReportedID", td.ReportedID)
 			todosToCheckStatus = append(todosToCheckStatus, &td)
 		}
 		return nil
@@ -134,6 +150,10 @@ func purgeCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc
 		if len(status) > 0 {
 			if status == "done" || status == "DONE" {
 				todosToPurge = append(todosToPurge, td)
+				if !quiet {
+					fmt.Println()
+					td.PrintCurrentStatus()
+				}
 			}
 		}
 	}
