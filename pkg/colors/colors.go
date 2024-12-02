@@ -3,15 +3,27 @@ package colors
 import "fmt"
 
 var reset = "\033[0m" 
-var red = "\033[31m" 
-var green = "\033[32m" 
-var yellow = "\033[33m" 
-var blue = "\033[34m" 
-var magenta = "\033[35m" 
-var cyan = "\033[36m" 
-var gray = "\033[37m" 
-var white = "\033[97m"
+var Red = "\033[31m" 
+var Green = "\033[32m" 
+var Yellow = "\033[33m" 
+var Blue = "\033[34m" 
+var Magenta = "\033[35m" 
+var Cyan = "\033[36m" 
+var Gray = "\033[37m" 
+var White = "\033[97m"
 
 func Error(str string) string {
-  return fmt.Sprintf("%s%s\n%s", red, str, reset)
+  return fmt.Sprintf("%s%s%s", Red, str, reset)
+}
+
+func Success(str string) string {
+  return fmt.Sprintf("%s%s%s", Green, str, reset)
+}
+
+func Info(str string) string {
+  return fmt.Sprintf("%s%s%s", Cyan, str, reset)
+}
+
+func Remote(str string) string {
+  return fmt.Sprintf("%s%s%s", Magenta, str, reset)
 }
