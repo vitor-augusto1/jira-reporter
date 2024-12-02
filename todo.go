@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"strings"
 
 	"github.com/vitor-augusto1/jira-weasel/pkg/assert"
+	"github.com/vitor-augusto1/jira-weasel/pkg/colors"
 )
 
 type Todo struct {
@@ -19,6 +19,7 @@ type Todo struct {
 	Body       []string
 	FilePath   string
 	Line       uint64
+	EndLine    uint64
 	RemoteAddr string
 	ReportedID *string
 	Regex      string
@@ -27,30 +28,27 @@ type Todo struct {
 type TodoTransformer func(Todo) error
 
 func (td *Todo) LineHasTodoPrefix(line string) *string {
-	if strings.HasPrefix(line, td.Prefix) {
+	cleanPrefix := strings.TrimSpace(td.Prefix)
+  cleanLine := strings.TrimSpace(line)
+	if strings.HasPrefix(cleanLine, cleanPrefix) {
 		lineContent := strings.TrimPrefix(line, td.Prefix)
 		return &lineContent
 	}
-	return nil
+  return nil
 }
 
 func (td *Todo) CommitTodoUpdate(commitMessage string) error {
-	if td.ReportedID != nil {
-		addCmd := exec.Command("git", "add", td.FilePath)
-		err := addCmd.Run()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Can't add changes: '%s'.\n", err)
-			return err
-		}
-		commitCmd := exec.Command("git", "commit", "-m", commitMessage)
-		err = commitCmd.Run()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Can't commit changes: '%s'.\n", err)
-			return err
-		}
-		return nil
+	addCmd := exec.Command("git", "add", td.FilePath)
+	err := addCmd.Run()
+	if err != nil {
+		return err
 	}
-	return errors.New("Error commiting changes")
+	commitCmd := exec.Command("git", "commit", "-m", commitMessage)
+	err = commitCmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func (td *Todo) UpdatedTodoString(defaultStr string) string {
@@ -63,7 +61,6 @@ func (td *Todo) UpdatedTodoString(defaultStr string) string {
 			*td.ReportedID,
 			td.Title,
 		)
-		fmt.Println(">>> Updated todo content: ", updatedTodo)
 		return updatedTodo
 	}
 	return defaultStr
@@ -95,7 +92,6 @@ func (td *Todo) StringBody() string {
 
 // Changes the Todo status in its line
 func (td *Todo) ChangeTodoStatusToReported() error {
-	fmt.Println("Changing the todo status...")
 	tmpFileName := "/tmp/tmp-wasel.weasel"
 	tmpFile, err := os.Create(tmpFileName)
 	if err != nil {
@@ -151,7 +147,6 @@ func (td *Todo) ChangeTodoStatusToReported() error {
 }
 
 func (td *Todo) SelfPurge() error {
-	fmt.Println("Purging todo: ", *td.ReportedID)
 	tmpFileName := "/tmp/tmp-weasel.weasel"
 	tmpFile, err := os.Create(tmpFileName)
 	assert.NoError(err, "Can't create the tmp file")
@@ -164,20 +159,16 @@ func (td *Todo) SelfPurge() error {
 	lnn := uint64(0)
 	for scanner.Scan() {
 		lnContent := scanner.Text()
-		if td.Line == (lnn + 1) {
-			continue
-		}
-    lineIsPartOfTheTodoBody := td.LineHasTodoPrefix(lnContent)
-		if lineIsPartOfTheTodoBody != nil && lnn > td.Line {
-			continue
-		}
-		fmt.Fprintln(tmpFile, lnContent)
 		lnn++
+    if lnn >= td.Line && lnn <= td.EndLine {
+      continue
+    }
+		fmt.Fprintln(tmpFile, lnContent)
 	}
-  err = os.Chmod(tmpFileName, todoFileInfo.Mode())
-  assert.NoError(err, "Can't set permissions")
-  err = os.Rename(tmpFileName, td.FilePath)
-  assert.NoError(err, "Can't change file name")
+	err = os.Chmod(tmpFileName, todoFileInfo.Mode())
+	assert.NoError(err, "Can't set permissions")
+	err = os.Rename(tmpFileName, td.FilePath)
+	assert.NoError(err, "Can't change file name")
 	return nil
 }
 
