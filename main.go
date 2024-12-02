@@ -183,10 +183,20 @@ func purgeCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc
 	}
 }
 
-func listCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc func()) {
+func listCommand(weasel *Weasel, quiet bool, bannerFunc func()) {
 	if !quiet {
 		bannerFunc()
 	}
+	weasel.VisitTodosInWeaselFiles(func(t Todo) error {
+		if t.ReportedID != nil {
+			fmt.Println()
+			t.PrintCurrentStatus()
+			return nil
+		}
+		fmt.Println()
+		t.PrintCurrentStatus()
+		return nil
+	})
 }
 
 func helperCommand() {
