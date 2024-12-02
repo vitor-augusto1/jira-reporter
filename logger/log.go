@@ -10,8 +10,8 @@ import (
 // Exit logging an error message
 func LogErrorExitingOne(message string) {
 	fmt.Fprintf(
-    os.Stderr,
-    colors.Error(message),
-  )
+		os.Stderr,
+		colors.Error(message),
+	)
 	os.Exit(1)
 }
