@@ -180,3 +180,25 @@ func (td *Todo) SelfPurge() error {
   assert.NoError(err, "Can't change file name")
 	return nil
 }
+
+func (td *Todo) PrintCurrentStatus() {
+	if td.ReportedID != nil {
+		fmt.Fprintf(
+			os.Stdout,
+			" [%s] %s\n [%s] [%s]\n\n",
+			colors.Success(*td.ReportedID),
+			strings.TrimLeft(td.ReturnTodoFirstLine(), td.Prefix),
+			colors.Info(td.FilePath),
+			colors.Remote(td.RemoteAddr),
+		)
+		return
+	}
+	fmt.Fprintf(
+		os.Stdout,
+		" [%s] %s\n [%s] [%s]\n\n",
+		colors.Error("UNREPORTED"),
+		strings.TrimLeft(td.ReturnTodoFirstLine(), td.Prefix),
+		colors.Info(td.FilePath),
+		colors.Remote(td.RemoteAddr),
+	)
+}
