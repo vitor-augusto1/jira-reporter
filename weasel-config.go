@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
-	"github.com/vitor-augusto1/jira-weasel/pkg/logger"
+	"github.com/vitor-augusto1/jira-weasel/logger"
 )
 
 type Project struct {

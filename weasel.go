@@ -43,6 +43,7 @@ func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 		}
 		lineIsPartOfTheTodoBody := todo.LineHasTodoPrefix(line)
 		if lineIsPartOfTheTodoBody != nil {
+      todo.EndLine = currentLineNumber
 			todo.Body = append(todo.Body, *lineIsPartOfTheTodoBody)
 		} else {
 			wl.StoreTodoFullRemoteAddrs(todo)
@@ -107,6 +108,7 @@ func (wl *Weasel) returnReportedTodoFromLine(
 				Title:      title,
 				FilePath:   filePath,
 				Line:       lineNumber,
+				EndLine:    lineNumber,
 				ReportedID: &reportedId,
 				Regex:      wl.ReportedTodoRegex(keyword),
 			}
