@@ -157,6 +157,16 @@ func purgeCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc
 			}
 		}
 	}
+	sort.Slice(todosToPurge, func(i, j int) bool {
+		if todosToPurge[i].FilePath == todosToPurge[j].FilePath {
+			return todosToPurge[i].Line > todosToPurge[j].Line
+		}
+		return todosToPurge[i].FilePath < todosToPurge[j].FilePath
+	})
+  if len(todosToPurge) == 0 {
+    fmt.Fprintf(os.Stdout, colors.Info(" There are no TODOS to be purge\n"))
+    os.Exit(0)
+  }
 	for _, td := range todosToPurge {
 		err := td.SelfPurge()
 		if err != nil {
@@ -164,7 +174,6 @@ func purgeCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc
 				os.Stderr,
 				colors.Error(fmt.Sprintf("Error trying to purge the todo of id: '%s'. Skipping for now.\n%s", *td.ReportedID, err)),
 			)
-			continue
 		}
 		commitMessage := fmt.Sprintf("weasel: Purge TODO (%s)", *td.ReportedID)
 		err = td.CommitTodoUpdate(commitMessage)
