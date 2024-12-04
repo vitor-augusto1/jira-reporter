@@ -32,7 +32,6 @@ func init() {
 }
 
 func main() {
-	// TODO: Add ui with bubbletea
 	CheckIfCurrentDirectoryIsAGitRepository()
 	CheckIfWeaselConfigFileExists()
 	var conf *Config
@@ -57,10 +56,30 @@ func main() {
 		flagVar    bool
 		silentFlag bool
 	)
-	flag.BoolVarP(&flagVar, REPORT_FLAG_NAME.full, REPORT_FLAG_NAME.short, REPORT_FLAG_NAME.defaultV, static.REPORT_MESSAGE)
-	flag.BoolVarP(&flagVar, PURGE_FLAG_NAME.full, PURGE_FLAG_NAME.short, PURGE_FLAG_NAME.defaultV, static.PURGE_MESSAGE)
-	flag.BoolVarP(&flagVar, LIST_FLAG_NAME.full, LIST_FLAG_NAME.short, LIST_FLAG_NAME.defaultV, static.LIST_MESSAGE)
-	flag.BoolVarP(&silentFlag, QUIET_FLAG_NAME.full, QUIET_FLAG_NAME.short, QUIET_FLAG_NAME.defaultV, static.SILENT_MESSAGE)
+	flag.BoolVarP(&flagVar,
+		REPORT_FLAG_NAME.full,
+		REPORT_FLAG_NAME.short,
+		REPORT_FLAG_NAME.defaultV,
+		static.REPORT_MESSAGE,
+	)
+	flag.BoolVarP(&flagVar,
+		PURGE_FLAG_NAME.full,
+		PURGE_FLAG_NAME.short,
+		PURGE_FLAG_NAME.defaultV,
+		static.PURGE_MESSAGE,
+	)
+	flag.BoolVarP(&flagVar,
+		LIST_FLAG_NAME.full,
+		LIST_FLAG_NAME.short,
+		LIST_FLAG_NAME.defaultV,
+		static.LIST_MESSAGE,
+	)
+	flag.BoolVarP(&silentFlag,
+		QUIET_FLAG_NAME.full,
+		QUIET_FLAG_NAME.short,
+		QUIET_FLAG_NAME.defaultV,
+		static.SILENT_MESSAGE,
+	)
 	flag.Parse()
 	if flag.Lookup(REPORT_FLAG_NAME.full).Changed {
 		reportCommand(weasel, jiraClient, &conf.Keywords, silentFlag, static.Banner)
@@ -74,7 +93,13 @@ func main() {
 	}
 }
 
-func reportCommand(weasel *Weasel, jiraClient *JiraClient, keywordMap *map[string]string, quiet bool, bannerFunc func()) {
+func reportCommand(
+  weasel *Weasel,
+  jiraClient *JiraClient,
+  keywordMap *map[string]string,
+  quiet bool,
+  bannerFunc func(),
+) {
 	assert.NotNil(weasel, "weasel can't be nil", "weasel", weasel)
 	assert.NotNil(jiraClient, "jiraClient can't be nil", "jiraClient", jiraClient)
 	assert.NotNil(keywordMap, "keywordMap can't be nil", "keywordMap", keywordMap)
@@ -82,14 +107,14 @@ func reportCommand(weasel *Weasel, jiraClient *JiraClient, keywordMap *map[strin
 		bannerFunc()
 	}
 	issuesToReport := []*Issue{}
-	weasel.VisitTodosInWeaselFiles(func(t Todo) error {
-		if t.ReportedID != nil {
+	weasel.VisitTodosInWeaselFiles(func(td Todo) error {
+		if td.ReportedID != nil {
 			return nil
 		}
-		assert.Nil(t.ReportedID, "Trying to report an already reported todo.", "t.ReportedID", t.ReportedID)
-		mappedKeyword, ok := (*keywordMap)[t.Keyword]
-		assert.Assert(ok, "The provided todo keyword was not mapped", "t.Keyword", t.Keyword)
-		issue := jiraClient.CreateNewIssueFromTODO(t, mappedKeyword)
+		assert.Nil(td.ReportedID, "Trying to report an already reported todo.", "t.ReportedID", td.ReportedID)
+		mappedKeyword, ok := (*keywordMap)[td.Keyword]
+		assert.Assert(ok, "The provided todo keyword was not mapped", "t.Keyword", td.Keyword)
+		issue := jiraClient.CreateNewIssueFromTODO(td, mappedKeyword)
 		if issue != nil {
 			issuesToReport = append(issuesToReport, issue)
 		}
@@ -107,7 +132,12 @@ func reportCommand(weasel *Weasel, jiraClient *JiraClient, keywordMap *map[strin
 		}
 		createdIssueResp, err := jiraClient.ReportIssueAsJiraTicket(issue)
 		if err != nil {
-			logger.LogErrorExitingOne(fmt.Sprintf("Can't report the following issue: '%s'. Skipping for now.\n", issue.Summary))
+			logger.LogErrorExitingOne(
+        fmt.Sprintf(
+          "Can't report the following issue: '%s'. Skipping for now.\n",
+          issue.Summary,
+        ),
+      )
 		}
 		issue.Todo.ReportedID = &createdIssueResp.Key
 		err = issue.Todo.ChangeTodoStatusToReported()
@@ -130,11 +160,11 @@ func purgeCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc
 	assert.NotNil(jiraClient, "jiraClient can't be nil", "jiraClient", jiraClient)
 	if !quiet {
 		bannerFunc()
-    fmt.Fprintf(
-      os.Stdout,
-      " 🧹 Purging %s TODOS...\n\n",
-      colors.Success("'DONE'"),
-    )
+		fmt.Fprintf(
+			os.Stdout,
+			" 🧹 Purging %s TODOS...\n\n",
+			colors.Success("'DONE'"),
+		)
 	}
 	todosToCheckStatus := []*Todo{}
 	todosToPurge := []*Todo{}
@@ -163,16 +193,22 @@ func purgeCommand(weasel *Weasel, jiraClient *JiraClient, quiet bool, bannerFunc
 		}
 		return todosToPurge[i].FilePath < todosToPurge[j].FilePath
 	})
-  if len(todosToPurge) == 0 {
-    fmt.Fprintf(os.Stdout, colors.Info(" There are no TODOS to be purge\n"))
-    os.Exit(0)
-  }
+	if len(todosToPurge) == 0 {
+		fmt.Fprintf(os.Stdout, colors.Info(" There are no TODOS to be purge\n"))
+		os.Exit(0)
+	}
 	for _, td := range todosToPurge {
 		err := td.SelfPurge()
 		if err != nil {
 			fmt.Fprintf(
 				os.Stderr,
-				colors.Error(fmt.Sprintf("Error trying to purge the todo of id: '%s'. Skipping for now.\n%s", *td.ReportedID, err)),
+				colors.Error(
+          fmt.Sprintf(
+            "Error trying to purge the todo of id: '%s'. Skipping for now.\n%s",
+            *td.ReportedID,
+            err,
+          ),
+        ),
 			)
 		}
 		commitMessage := fmt.Sprintf("weasel: Purge TODO (%s)", *td.ReportedID)
@@ -187,14 +223,14 @@ func listCommand(weasel *Weasel, quiet bool, bannerFunc func()) {
 	if !quiet {
 		bannerFunc()
 	}
-	weasel.VisitTodosInWeaselFiles(func(t Todo) error {
-		if t.ReportedID != nil {
+	weasel.VisitTodosInWeaselFiles(func(td Todo) error {
+		if td.ReportedID != nil {
 			fmt.Println()
-			t.PrintCurrentStatus()
+			td.PrintCurrentStatus()
 			return nil
 		}
 		fmt.Println()
-		t.PrintCurrentStatus()
+		td.PrintCurrentStatus()
 		return nil
 	})
 }

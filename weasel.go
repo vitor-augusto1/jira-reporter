@@ -19,8 +19,7 @@ type Weasel struct {
 	baseRemoteUrl string
 }
 
-// Walk a file searching for todos or comments with specific keywords
-// and execute TodoTransformer
+// Walk a file searching for todos and execute TodoTransformer
 func (wl *Weasel) searchTodos(filePath string, ttr TodoTransformer) error {
 	file, err := os.Open(filePath)
 	if err != nil {
